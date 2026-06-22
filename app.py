@@ -570,11 +570,88 @@ def check_password():
     return False
 
 
+def _visits_file():
+    return _secret("PM_VISITS_FILE", "") or "visits.json"
+
+
+def _bump_visits():
+    """Zlicza otwarcia (raz na sesję). Zapis do pliku JSON: {total, days:{YYYY-MM-DD:n}, last}.
+    Wszystko w try/except — błąd licznika NIGDY nie może wywalić aplikacji."""
+    try:
+        if st.session_state.get("_counted"):
+            return st.session_state.get("_visit_total")
+        st.session_state["_counted"] = True
+        import datetime
+        path = _visits_file()
+        data = {"total": 0, "days": {}}
+        if os.path.exists(path):
+            try:
+                with open(path, "r", encoding="utf-8") as fh:
+                    data = json.load(fh)
+            except Exception:
+                data = {"total": 0, "days": {}}
+        today = datetime.date.today().isoformat()
+        data["total"] = int(data.get("total", 0)) + 1
+        data.setdefault("days", {})
+        data["days"][today] = int(data["days"].get(today, 0)) + 1
+        data["last"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump(data, fh, ensure_ascii=False)
+        st.session_state["_visit_total"] = data["total"]
+        return data["total"]
+    except Exception:
+        return None
+
+
+def _show_visits():
+    """Panel statystyk — widoczny tylko pod adresem z ?stats=1 (dla Ciebie, nie dla klubu)."""
+    try:
+        if str(st.query_params.get("stats", "")) not in ("1", "true", "tak"):
+            return
+        path = _visits_file()
+        if not os.path.exists(path):
+            st.info("Licznik jeszcze pusty (brak zapisanych otwarć).")
+            return
+        with open(path, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+        st.markdown("### 📈 Statystyki otwarć")
+        c = st.columns(3)
+        c[0].metric("Otwarcia łącznie", int(data.get("total", 0)))
+        days = data.get("days", {})
+        import datetime
+        last7 = sum(v for d, v in days.items()
+                    if d >= (datetime.date.today() - datetime.timedelta(days=6)).isoformat())
+        c[1].metric("Ostatnie 7 dni", last7)
+        c[2].metric("Ostatnie otwarcie", data.get("last", "—"))
+        if days:
+            srt = pd.DataFrame(sorted(days.items()), columns=["Dzień", "Otwarcia"]).set_index("Dzień")
+            st.bar_chart(srt.tail(30))
+        st.caption("Uwaga: na darmowym Streamlit Cloud licznik zeruje się po restarcie/uśpieniu "
+                   "aplikacji (plik jest tymczasowy). To dolna granica od ostatniego startu.")
+    except Exception:
+        pass
+
+
+def _intro_md():
+    """Tekst wprowadzający raportu. Źródło: sekret PM_INTRO albo plik intro.md w repo.
+    Brak obu → nic się nie pokazuje (kluby bez intro.md są nietknięte)."""
+    txt = _secret("PM_INTRO", "")
+    if not txt and os.path.exists("intro.md"):
+        try:
+            with open("intro.md", encoding="utf-8") as fh:
+                txt = fh.read()
+        except Exception:
+            txt = ""
+    return txt
+
+
 def main():
     st.set_page_config(page_title="Almanach ligowy", layout="wide")
     st.markdown(CSS, unsafe_allow_html=True)
     if not check_password():
         st.stop()
+    _bump_visits()
+    _show_visits()
     stats, matches = load_data()
     data = build(stats, matches)
 
@@ -624,6 +701,11 @@ def main():
             "</div>", unsafe_allow_html=True)
     else:
         _header_text()
+
+    _intro = _intro_md()
+    if _intro:
+        with st.expander("ℹ️ O tym raporcie / jak korzystać", expanded=True):
+            st.markdown(_intro)
 
     # ---- FILTRY ----
     FILTER_KEYS = ["f_zaw", "f_klub", "f_rozgr", "f_liga", "f_woj",
