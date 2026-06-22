@@ -27,6 +27,22 @@ def _secret(key, default=""):
 DATA_MODE = _secret("PM_DATA_MODE", "csv") or "csv"
 REGION = _secret("PM_REGION", "")   # region wybrany na wejsciu (region -> liga -> play)
 
+# Rodzaj gramatyczny etykiet UI: 'm' (domyślnie, kluby) albo 'f' (raport dziewczynek).
+# Ustaw sekret PM_GENDER = "f", żeby przełączyć teksty na żeńskie.
+_GENDER_F = (_secret("PM_GENDER", "m") or "m").lower().startswith("f")
+L = {
+    "player_one":  "Piłkarka"               if _GENDER_F else "Zawodnik",
+    "players_gen": "zawodniczek"            if _GENDER_F else "zawodników",
+    "players_all": "Wszystkie zawodniczki"  if _GENDER_F else "Wszyscy zawodnicy",
+    "of_player":   "zawodniczki"            if _GENDER_F else "zawodnika",
+    "played":      "grała"                  if _GENDER_F else "grał",
+    "top_players": "Topowe piłkarki"        if _GENDER_F else "Topowi zawodnicy",
+    "no_players":  "Brak zawodniczek dla wybranych filtrów." if _GENDER_F
+                   else "Brak zawodników dla wybranych filtrów.",
+    "click_one":   "kliknij piłkarkę"       if _GENDER_F else "kliknij gracza",
+}
+
+
 NUMERIC_COMMA = ["match_score", "m_overall_score", "m_season_score", "overall_score",
                  "season_score", "global_last_overall_score", "global_last_season_score"]
 NUMERIC_PLAIN = ["minutes", "goals", "yellow_cards", "red_cards", "est_birth_year",
@@ -473,7 +489,7 @@ def badges_html(r):
     return "".join(out)
 
 
-EXPORT_COLS = [("zawodnik", "Zawodnik"), ("club_name", "Klub"), ("team_name", "Drużyna"),
+EXPORT_COLS = [("zawodnik", L["player_one"]), ("club_name", "Klub"), ("team_name", "Drużyna"),
                ("region_name", "Województwo"), ("est_birth_year", "Rocznik"),
                ("liga_wiodaca", "Liga wiodąca"),
                ("PM_Index", "PM Index"), ("PM_premia", "Premia"),
@@ -678,14 +694,14 @@ def main():
     def _header_text():
         st.title("Almanach ligowy")
         reg = f"Region: **{region_txt}**  ·  " if region_txt else ""
-        st.markdown(f"{reg}**{liga}** · zawodników: {len(data)} · "
+        st.markdown(f"{reg}**{liga}** · {L['players_gen']}: {len(data)} · "
                     f"z minutami w seniorach: {(data['senior_minutes'].fillna(0) > 0).sum()}")
         if len(plays) > 1:
             st.caption(f"Zestawienie obejmuje {len(plays)} rozgrywek (cały wybrany poziom / region). "
                        "Kolumny „(liga)” = łącznie z całego wybranego zakresu, „(total)” = cały sezon "
-                       "zawodnika we wszystkich rozgrywkach.")
+                       f"{L['of_player']} we wszystkich rozgrywkach.")
         else:
-            st.caption("Wszyscy zawodnicy z wybranej ligi wraz z meczami w bieżącym sezonie we "
+            st.caption(f"{L['players_all']} z wybranej ligi wraz z meczami w bieżącym sezonie we "
                        "wszystkich rozgrywkach. Kolumny „(liga)” dotyczą wybranej ligi, „(total)” — "
                        "całego sezonu.")
 
@@ -725,11 +741,11 @@ def main():
         else:
             f_reg = []
         r1 = st.columns([2, 2, 2])
-        q = r1[0].text_input("Zawodnik (imię/nazwisko)", "", key="f_zaw")
+        q = r1[0].text_input(f"{L['player_one']} (imię/nazwisko)", "", key="f_zaw")
         f_club = r1[1].multiselect("Klub", sorted(data["club_name"].dropna().unique()), key="f_klub")
-        f_lg = r1[2].multiselect("Rozgrywki (gdziekolwiek grał)",
+        f_lg = r1[2].multiselect(f"Rozgrywki (gdziekolwiek {L['played']})",
                                  sorted({x for s in data["_leagues"].dropna() for x in s}), key="f_rozgr")
-        f_pl = st.multiselect("Liga (gdziekolwiek grał)",
+        f_pl = st.multiselect(f"Liga (gdziekolwiek {L['played']})",
                               sorted({x for s in data["_plays"].dropna() for x in s}), key="f_liga")
         r2 = st.columns(4)
         def rng(col, label, c, key):
@@ -773,11 +789,11 @@ def main():
     f = f.sort_values("PM_Index", ascending=False).reset_index(drop=True)
 
     # ---- KARTY TOPOWYCH (scroll w bok) ----
-    st.markdown("### 🏅 Topowi zawodnicy")
+    st.markdown(f"### 🏅 {L['top_players']}")
     if len(f):
         st.markdown(cards_html(f.head(15)), unsafe_allow_html=True)
     else:
-        st.info("Brak zawodników dla wybranych filtrów.")
+        st.info(L["no_players"])
 
     # ---- TABELA ----
     st.markdown("### 📋 Analityka")
@@ -813,7 +829,7 @@ def main():
         return " ".join(z)
     ft = f.copy()
     ft["Znaczniki"] = ft.apply(znaczniki, axis=1)
-    cmap = {"zawodnik": "Zawodnik", "Znaczniki": "Znaczniki", "region_name": "Województwo",
+    cmap = {"zawodnik": L["player_one"], "Znaczniki": "Znaczniki", "region_name": "Województwo",
             "team_name": "Drużyna",
             "club_name": "Klub", "est_birth_year": "Rocznik", "PM_Index": "PM Index",
             "PM_premia": "Premia", "pm_score": "Score (liga)", "pm_score_total": "Score (total)",
@@ -849,7 +865,7 @@ def main():
         st.markdown(f"### ⚽ Mecze: {who}")
         mm = matches[matches["player_id"] == sel_pid]
     else:
-        st.markdown(f"### ⚽ Mecze ({len(f)} zawodników) — kliknij gracza wyżej, by zawęzić")
+        st.markdown(f"### ⚽ Mecze ({len(f)} {L['players_gen']}) — {L['click_one']} wyżej, by zawęzić")
         mm = matches[matches["player_id"].isin(f["player_id"])]
     mm = mm.assign(pm_score=compute_pm_score(mm)["score"].values)
     mc = {"match_date": "Data", "region_name": "Województwo", "league_name": "Liga",
