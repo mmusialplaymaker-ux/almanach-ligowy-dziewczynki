@@ -19,5 +19,5 @@ jakości na tle całej ligi (chłopcy i dziewczęta razem).
 - **Rozmowy z klubami** — konkretne dane (minuty, mecze, poziom rozgrywek) ułatwiają
   argumentację przy ścieżce rozwoju zawodniczki i ewentualnym przejściu do żeńskiej drużyny.
 
-_PM Index liczony jest względem całej ligi mieszanej, więc pokazuje pozycję dziewczyny
+_PM Index liczony jest względem całej ligi mieszanej, więc pokazuje pozycję zawodniczki
 na tle wszystkich grających, nie tylko innych dziewcząt._

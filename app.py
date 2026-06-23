@@ -758,7 +758,7 @@ def main():
         s_mecz = rng("mecze_play", "Mecze (liga)", r2[2], "f_mecz")
         s_kart = rng("kartki_total", "Kartki total", r2[3], "f_kart")
         r3 = st.columns(4)
-        f_up = r3[0].checkbox("↑ Grający ze starszymi", key="f_up")
+        f_up = r3[0].checkbox("↑ Gra ze starszymi", key="f_up")
         f_kad = r3[1].checkbox("🪑 W kadrze seniorów", key="f_kad")
         f_sen = r3[2].checkbox("⚽ Minuty w seniorach", key="f_sen")
         f_clj = r3[3].checkbox("🏅 Minuty w CLJ", key="f_clj")
@@ -872,12 +872,12 @@ def main():
           "play_name": "Play",
           "team_name": "Drużyna", "opponent_name": "Przeciwnik", "team_side": "Strona",
           "match_result": "Wynik", "minutes": "Min", "goals": "Gole",
-          "yellow_cards": "ŻK", "red_cards": "CK", "pm_score": "Ocena (v7)",
+          "yellow_cards": "ŻK", "red_cards": "CK", "pm_score": "Score",
           "status_seniorski": "Status senior"}
     mshow = (mm.sort_values("match_date", ascending=False)
                [[c for c in mc if c in mm.columns]].rename(columns=mc))
     st.dataframe(mshow, use_container_width=True, height=360, hide_index=True,
-                 column_config={"Ocena (v7)": st.column_config.NumberColumn(format="%.3f")})
+                 column_config={"Score": st.column_config.NumberColumn(format="%.3f")})
 
 
 if __name__ == "__main__":
