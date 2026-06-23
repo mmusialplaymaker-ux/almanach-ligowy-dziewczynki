@@ -207,8 +207,17 @@ def compute_pm_score(df):
 B_UP = 0.05          # gra ze starszymi rocznikiem (junior w gore)
 B_SEN_SQUAD = 0.04   # w kadrze seniorow (0 minut)
 B_SEN_PLAYED = 0.12  # realne minuty w seniorach
+
+# formy gramatyczne zależne od PM_GENDER (do tekstów objaśniających)
+_p_gen  = "zawodniczki"  if _GENDER_F else "zawodnika"      # dopełniacz: pozycja ~
+_p_nom  = "zawodniczka"  if _GENDER_F else "zawodnik"       # mianownik
+_v_gral = "grała"        if _GENDER_F else "grał"
+_v_wyst = "występująca"  if _GENDER_F else "występujący"
+_v_byl  = "była"         if _GENDER_F else "był"
+_v_roz  = "rozegrała"    if _GENDER_F else "rozegrał"
+
 PM_HELP = (
-    "**PM Index** to wskaźnik pozycji zawodnika względem stawki tej ligi — im wyżej, tym "
+    f"**PM Index** to wskaźnik pozycji {_p_gen} względem stawki tej ligi — im wyżej, tym "
     "lepiej wypada na tle rywali. Baza (zwykle 0–1) to ważona suma czterech percentyli "
     "liczonych w obrębie wybranej ligi:\n\n"
     "- **Jakość (55%)** — część **league + performance** realnego PlayMaker Score 2.0 "
@@ -217,7 +226,7 @@ PM_HELP = (
     "młodzieży dominuje go wiek, więc ranking bierze stats_part, a sygnał wieku/gry w górę jest w premiach.\n\n"
     "- **Forma (10%)** — średnia z 5 ostatnich meczów (proxy) względem średniej sezonu "
     "(dodatnia = forma rosnąca, ujemna = spadek).\n\n"
-    "- **Dostępność (20%)** — łączne minuty rozegrane w lidze; jak regularnie zawodnik gra "
+    f"- **Dostępność (20%)** — łączne minuty rozegrane w lidze; jak regularnie {_p_nom} gra "
     "(zaufanie trenera, zdrowie, rola w zespole).\n\n"
     "- **Konsekwencja (15%)** — stabilność ocen meczowych (proxy; mała zmienność = równy poziom).\n\n"
     "Do bazy doliczana jest **premia kontekstowa** (kolumna „Premia”): "
@@ -249,12 +258,12 @@ div[data-baseweb="popover"] ul{max-height:420px;}
 """
 
 BADGE_HELP = (
-    "**↑ ze starszymi** — zawodnik grał powyżej dominującego rocznika danej ligi, w DOWOLNYCH "
-    "rozgrywkach sezonu (np. zawodnik z C1 występujący w A1/B1). Liczba w nawiasie to o ile "
+    f"**↑ ze starszymi** — {_p_nom} {_v_gral} powyżej dominującego rocznika danej ligi, w DOWOLNYCH "
+    f"rozgrywkach sezonu (np. {_p_nom} z C1 {_v_wyst} w A1/B1). Liczba w nawiasie to o ile "
     "roczników wyżej — maksymalny zaobserwowany skok.\n\n"
-    "**🪑 kadra seniorów** — był w meczowej kadrze seniorów, ale rozegrał 0 minut.\n\n"
-    "**⚽ minuty w seniorach** — rozegrał realne minuty w rozgrywkach seniorskich (na karcie z liczbą minut).\n\n"
-    "**🏅 minuty w CLJ** — rozegrał minuty w Centralnej Lidze Juniorów (najwyższy poziom juniorski w PL)."
+    f"**🪑 kadra seniorów** — {_v_byl} w meczowej kadrze seniorów, ale {_v_roz} 0 minut.\n\n"
+    f"**⚽ minuty w seniorach** — {_v_roz} realne minuty w rozgrywkach seniorskich (na karcie z liczbą minut).\n\n"
+    f"**🏅 minuty w CLJ** — {_v_roz} minuty w Centralnej Lidze Juniorów (najwyższy poziom juniorski w PL)."
 )
 
 
